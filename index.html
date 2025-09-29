@@ -1,1 +1,491 @@
-<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Laporan Absensi dan Pembayaran Les</title><script src="https://cdn.tailwindcss.com"></script><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{ font-family: 'Inter', sans-serif; background-color: #1a202c; } .modal{ background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);} </style></head><body class="bg-gray-900 text-gray-100 min-h-screen"><div id="app" class="flex flex-col p-8"><header class="text-center mb-12"><h1 class="text-4xl font-extrabold text-gray-100">Laporan Les Harian</h1><p class="text-gray-300 mt-2 text-lg">Kelola absensi dan pembayaran siswa Anda secara efisien.</p></header><section class="mb-12"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"><div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-blue-500"><p class="text-sm text-gray-400">Total Siswa</p><p id="total-students" class="text-3xl font-bold mt-2">0</p></div><div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-purple-500"><p class="text-sm text-gray-400">Total Hadir</p><p id="total-attendance" class="text-3xl font-bold mt-2">0</p></div><div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-green-500"><p class="text-sm text-gray-400">Total Terbayar</p><p id="total-paid" class="text-xl font-bold mt-2">Rp0</p></div><div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-red-500"><p class="text-sm text-gray-400">Total Belum Terbayar</p><p id="total-unpaid" class="text-xl font-bold mt-2">Rp0</p></div></div></section><section><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-200">Daftar Siswa</h2><button id="add-student-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg transition-colors duration-200">+ Tambah Siswa </button></div><div class="overflow-x-auto rounded-2xl shadow-lg border border-gray-700"><table class="min-w-full divide-y divide-gray-700"><thead class="bg-gray-800"><tr><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</th><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama Siswa</th><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Jadwal Belajar</th><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Hadir</th><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Izin</th><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanpa Ket.</th><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Jumlah Bayar</th><th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"></th></tr></thead><tbody id="students-table-body" class="bg-gray-800 divide-y divide-gray-700"></tbody></table></div></section><div id="add-student-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden"><div class="bg-gray-800 rounded-lg p-8 w-full max-w-lg shadow-xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-gray-100">Tambah Siswa Baru</h3><button id="close-add-modal" class="text-gray-400 hover:text-gray-200"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div><form id="add-student-form"><div class="mb-4"><label for="new-student-name" class="block text-sm font-semibold text-gray-300 mb-2">Nama Siswa</label><input type="text" id="new-student-name" required class="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring focus:ring-blue-500"></div><div class="mb-4"><label for="new-student-schedule" class="block text-sm font-semibold text-gray-300 mb-2">Jadwal Belajar</label><input type="text" id="new-student-schedule" required class="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring focus:ring-blue-500"></div><div class="flex justify-end"><button type="submit" class="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">Simpan</button></div></form></div></div><div id="manage-student-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden"><div class="bg-gray-800 rounded-lg p-8 w-full max-w-3xl shadow-xl"><div class="flex justify-between items-center mb-4"><h3 id="manage-student-title" class="text-xl font-bold text-gray-100">Kelola Absensi</h3><button id="close-manage-modal" class="text-gray-400 hover:text-gray-200"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div><div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-600"><thead class="bg-gray-700"><tr><th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</th><th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Hadir</th><th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Izin</th><th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanpa Ket.</th><th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status Bayar</th></tr></thead><tbody id="manage-student-weeks-body" class="divide-y divide-gray-600"></tbody></table></div><div class="flex justify-end mt-6"><button id="add-student-week-btn" class="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">Tambah Hari Baru </button></div></div></div><div id="message-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden"><div class="bg-gray-800 rounded-lg p-8 w-full max-w-sm shadow-xl"><h3 id="message-modal-title" class="text-xl font-bold text-gray-100 mb-4">Pesan</h3><p id="message-modal-text" class="text-gray-300 mb-6"></p><div class="flex justify-end"><button id="close-message-btn" class="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">Tutup</button></div></div></div><div id="delete-confirm-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden"><div class="bg-gray-800 rounded-lg p-8 w-full max-w-sm shadow-xl"><h3 class="text-xl font-bold text-red-400 mb-4">Konfirmasi Hapus</h3><p class="text-gray-300 mb-6">Apakah Anda yakin ingin menghapus siswa ini? Tindakan ini tidak dapat dibatalkan.</p><div class="flex justify-end space-x-4"><button id="cancel-delete-btn" class="px-6 py-2 text-sm font-semibold text-gray-800 bg-gray-300 rounded-lg hover:bg-gray-400 transition duration-300">Batal</button><button id="confirm-delete-btn" class="px-6 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-300">Hapus</button></div></div></div></div><script>// Global variables for local data storage const STUDENTS_KEY='lesson_students'; let students=[]; let currentStudentToDeleteId=null; const DAILY_FEE=5000; const studentsTableBody=document.getElementById('students-table-body'); const totalStudentsEl=document.getElementById('total-students'); const totalAttendanceEl=document.getElementById('total-attendance'); const totalPaidEl=document.getElementById('total-paid'); const totalUnpaidEl=document.getElementById('total-unpaid'); // Modal Elements const addStudentModal=document.getElementById('add-student-modal'); const manageStudentModal=document.getElementById('manage-student-modal'); const manageStudentTitle=document.getElementById('manage-student-title'); const manageStudentWeeksBody=document.getElementById('manage-student-weeks-body'); const addStudentBtn=document.getElementById('add-student-btn'); // Confirmation Modal Elements const deleteConfirmModal=document.getElementById('delete-confirm-modal'); const confirmDeleteBtn=document.getElementById('confirm-delete-btn'); const cancelDeleteBtn=document.getElementById('cancel-delete-btn'); let currentStudentToManage=null; const showMessage=(title, text)=>{ document.getElementById('message-modal-title').textContent=title; document.getElementById('message-modal-text').textContent=text; document.getElementById('message-modal').classList.remove('hidden');}; const hideMessage=()=>{ document.getElementById('message-modal').classList.add('hidden');}; const showDeleteConfirmModal=()=>{ deleteConfirmModal.classList.remove('hidden');}; const hideDeleteConfirmModal=()=>{ deleteConfirmModal.classList.add('hidden');}; const saveData=()=>{ localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));}; const loadData=()=>{ const data=localStorage.getItem(STUDENTS_KEY); students=data ? JSON.parse(data) : [];}; const updateDashboard=(studentsData)=>{ let totalAttendance=0; let totalPaidAmount=0; let totalUnpaidAmount=0; if (studentsData.length >0){ studentsData.forEach(student=>{ (student.weeks || []).forEach(day=>{ if (day.attended){ totalAttendance++;} if (day.paid){ totalPaidAmount +=day.paidAmount;} else if (!day.paid && day.attended){ totalUnpaidAmount +=day.paidAmount;}});});} totalStudentsEl.textContent=studentsData.length; totalAttendanceEl.textContent=totalAttendance; totalPaidEl.textContent=`Rp${totalPaidAmount.toLocaleString('id-ID')}`; totalUnpaidEl.textContent=`Rp${totalUnpaidAmount.toLocaleString('id-ID')}`;}; const renderStudents=()=>{ studentsTableBody.innerHTML=''; updateDashboard(students); if (students.length===0){ studentsTableBody.innerHTML=`<tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">Tidak ada data siswa. Silakan tambahkan siswa baru.</td></tr>`; return;} const today=new Date(); const dateString=`${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`; students.forEach(student=>{ const row=document.createElement('tr'); row.className='hover:bg-gray-700 transition-colors duration-200'; const summary={ attended: 0, excused: 0, unexcused: 0}; let netBalance=0; (student.weeks || []).forEach(day=>{ if (day.attended) summary.attended++; if (day.excused) summary.excused++; if (day.unexcused) summary.unexcused++; if (day.paid){ netBalance +=DAILY_FEE;} else if (day.attended){ netBalance -=DAILY_FEE;}}); const balanceClass=netBalance < 0 ? 'text-red-400' : 'text-green-400'; const formattedBalance=`Rp${netBalance.toLocaleString('id-ID')}`; row.innerHTML=` <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">${dateString}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">${student.name}</td><td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${student.schedule}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-400">${summary.attended}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-400">${summary.excused}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-400">${summary.unexcused}</td><td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${balanceClass}">${formattedBalance}</td><td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button class="manage-btn text-blue-400 hover:text-blue-200" data-id="${student.id}">Kelola Absensi</button><button class="delete-btn text-red-400 hover:text-red-200 ml-4" data-id="${student.id}">Hapus</button></td>`; studentsTableBody.appendChild(row);}); // Add event listeners for new buttons document.querySelectorAll('.manage-btn').forEach(button=>{ button.addEventListener('click', (e)=>{ const studentId=e.target.dataset.id; const student=students.find(s=>s.id===studentId); if (student){ currentStudentToManage=student; showManageStudentModal(student);}});}); document.querySelectorAll('.delete-btn').forEach(button=>{ button.addEventListener('click', (e)=>{ const studentId=e.target.dataset.id; currentStudentToDeleteId=studentId; showDeleteConfirmModal();});});}; const showManageStudentModal=(student)=>{ manageStudentTitle.textContent=`Kelola Absensi: ${student.name}`; manageStudentWeeksBody.innerHTML=''; (student.weeks || []).forEach(day=>{ const row=document.createElement('tr'); row.className='border-b border-gray-600 last:border-b-0'; const attendedChecked=day.attended ? 'checked' : ''; const excusedChecked=day.excused ? 'checked' : ''; const unexcusedChecked=day.unexcused ? 'checked' : ''; const paidChecked=day.paid ? 'checked' : ''; row.innerHTML=` <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">${day.date}</td><td class="px-4 py-3 whitespace-nowrap text-sm"><input type="checkbox" class="attended-checkbox form-checkbox h-4 w-4 text-blue-600 rounded-md border-gray-600 bg-gray-700" ${attendedChecked} data-date="${day.date}">Hadir </td><td class="px-4 py-3 whitespace-nowrap text-sm"><input type="checkbox" class="excused-checkbox form-checkbox h-4 w-4 text-purple-600 rounded-md border-gray-600 bg-gray-700" ${excusedChecked} data-date="${day.date}">Izin </td><td class="px-4 py-3 whitespace-nowrap text-sm"><input type="checkbox" class="unexcused-checkbox form-checkbox h-4 w-4 text-red-600 rounded-md border-gray-600 bg-gray-700" ${unexcusedChecked} data-date="${day.date}">Tanpa Ket. </td><td class="px-4 py-3 whitespace-nowrap text-sm"><input type="checkbox" class="paid-checkbox form-checkbox h-4 w-4 text-green-600 rounded-md border-gray-600 bg-gray-700" ${paidChecked} data-date="${day.date}">Terbayar </td>`; manageStudentWeeksBody.appendChild(row); // Add event listeners for checkboxes const checkboxes=row.querySelectorAll('input[type="checkbox"]'); checkboxes.forEach(checkbox=>{ checkbox.addEventListener('change', (e)=>{ const dateToUpdate=e.target.dataset.date; const isChecked=e.target.checked; const dayToUpdate=student.weeks.find(w=>w.date===dateToUpdate); if (!dayToUpdate) return; // Handle mutual exclusivity for attendance status if (e.target.classList.contains('attended-checkbox')){ dayToUpdate.attended=isChecked; if (isChecked){ dayToUpdate.excused=false; dayToUpdate.unexcused=false;}} else if (e.target.classList.contains('excused-checkbox')){ dayToUpdate.excused=isChecked; if (isChecked){ dayToUpdate.attended=false; dayToUpdate.unexcused=false;}} else if (e.target.classList.contains('unexcused-checkbox')){ dayToUpdate.unexcused=isChecked; if (isChecked){ dayToUpdate.attended=false; dayToUpdate.excused=false;}} else if (e.target.classList.contains('paid-checkbox')){ dayToUpdate.paid=isChecked;} // Re-render the modal and save data updateStudent(student.id,{ weeks: student.weeks}); setTimeout(()=>showManageStudentModal(students.find(s=>s.id===student.id)), 10);});});}); manageStudentModal.classList.remove('hidden');}; const hideManageStudentModal=()=>{ manageStudentModal.classList.add('hidden');}; const addStudent=(studentData)=>{ students.push({ id: crypto.randomUUID(), ...studentData}); saveData(); renderStudents(); showMessage('Sukses', 'Siswa berhasil ditambahkan!'); document.getElementById('add-student-form').reset(); addStudentModal.classList.add('hidden');}; const updateStudent=(studentId, dataToUpdate)=>{ const studentIndex=students.findIndex(s=>s.id===studentId); if (studentIndex >-1){ students[studentIndex]={ ...students[studentIndex], ...dataToUpdate}; saveData(); renderStudents();}}; const deleteStudent=(studentId)=>{ students=students.filter(s=>s.id !==studentId); saveData(); renderStudents(); showMessage('Sukses', 'Siswa berhasil dihapus!');}; // Initialize on window load window.addEventListener('load', ()=>{ loadData(); renderStudents();}); document.getElementById('add-student-form').addEventListener('submit', (e)=>{ e.preventDefault(); const name=document.getElementById('new-student-name').value.trim(); const schedule=document.getElementById('new-student-schedule').value.trim(); if (name && schedule){ addStudent({ name, schedule, weeks: []});} else{ showMessage("Peringatan", "Nama dan Jadwal Siswa tidak boleh kosong.");}}); document.getElementById('add-student-week-btn').addEventListener('click', ()=>{ if (!currentStudentToManage) return; const today=new Date(); const dateString=`${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`; const newDay={ date: dateString, attended: false, excused: false, unexcused: false, paid: false, paidAmount: DAILY_FEE}; const updatedDays=[...(currentStudentToManage.weeks || []), newDay]; updateStudent(currentStudentToManage.id,{ weeks: updatedDays}); // Re-render the modal to show the new week setTimeout(()=>{ currentStudentToManage=students.find(s=>s.id===currentStudentToManage.id); showManageStudentModal(currentStudentToManage);}, 10);}); document.getElementById('close-add-modal').addEventListener('click', ()=>addStudentModal.classList.add('hidden')); document.getElementById('close-manage-modal').addEventListener('click', hideManageStudentModal); document.getElementById('close-message-btn').addEventListener('click', hideMessage); // Initial button listener addStudentBtn.addEventListener('click', ()=>addStudentModal.classList.remove('hidden')); // Delete confirmation modal listeners confirmDeleteBtn.addEventListener('click', ()=>{ if (currentStudentToDeleteId){ deleteStudent(currentStudentToDeleteId); currentStudentToDeleteId=null; hideDeleteConfirmModal();}}); cancelDeleteBtn.addEventListener('click', ()=>{ currentStudentToDeleteId=null; hideDeleteConfirmModal();}); </script></body></html>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Absensi dan Pembayaran Les</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Latar belakang gelap */
+        }
+        .modal {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div id="app" class="flex flex-col p-8">
+        <!-- Judul dan Informasi -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-gray-100">Laporan Les Harian</h1>
+            <p class="text-gray-300 mt-2 text-lg">Kelola absensi dan pembayaran siswa Anda secara efisien.</p>
+        </header>
+
+        <!-- Dashboard Statistik -->
+        <section class="mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Card Total Siswa -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-blue-500">
+                    <p class="text-sm text-gray-400">Total Siswa</p>
+                    <p id="total-students" class="text-3xl font-bold mt-2">0</p>
+                </div>
+                <!-- Card Total Absensi -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-purple-500">
+                    <p class="text-sm text-gray-400">Total Hadir</p>
+                    <p id="total-attendance" class="text-3xl font-bold mt-2">0</p>
+                </div>
+                <!-- Card Total Terbayar -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-green-500">
+                    <p class="text-sm text-gray-400">Total Terbayar</p>
+                    <p id="total-paid" class="text-xl font-bold mt-2">Rp0</p>
+                </div>
+                <!-- Card Total Belum Terbayar -->
+                <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border-l-4 border-red-500">
+                    <p class="text-sm text-gray-400">Total Belum Terbayar</p>
+                    <p id="total-unpaid" class="text-xl font-bold mt-2">Rp0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabel Laporan Siswa -->
+        <section>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-200">Daftar Siswa</h2>
+                <button id="add-student-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg transition-colors duration-200">
+                    + Tambah Siswa
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto rounded-2xl shadow-lg border border-gray-700">
+                <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-800">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama Siswa</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Jadwal Belajar</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Hadir</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Izin</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanpa Ket.</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Jumlah Bayar</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-table-body" class="bg-gray-800 divide-y divide-gray-700">
+                        <!-- Data siswa akan diisi di sini oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Modal Tambah Siswa -->
+        <div id="add-student-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden">
+            <div class="bg-gray-800 rounded-lg p-8 w-full max-w-lg shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-100">Tambah Siswa Baru</h3>
+                    <button id="close-add-modal" class="text-gray-400 hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form id="add-student-form">
+                    <div class="mb-4">
+                        <label for="new-student-name" class="block text-sm font-semibold text-gray-300 mb-2">Nama Siswa</label>
+                        <input type="text" id="new-student-name" required class="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring focus:ring-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label for="new-student-schedule" class="block text-sm font-semibold text-gray-300 mb-2">Jadwal Belajar</label>
+                        <input type="text" id="new-student-schedule" required class="w-full px-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:ring focus:ring-blue-500">
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal Kelola Absensi Siswa -->
+        <div id="manage-student-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden">
+            <div class="bg-gray-800 rounded-lg p-8 w-full max-w-3xl shadow-xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="manage-student-title" class="text-xl font-bold text-gray-100">Kelola Absensi</h3>
+                    <button id="close-manage-modal" class="text-gray-400 hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-600">
+                        <thead class="bg-gray-700">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Hadir</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Izin</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanpa Ket.</th>
+                                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status Bayar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manage-student-weeks-body" class="divide-y divide-gray-600">
+                            <!-- Weeks will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button id="add-student-week-btn" class="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">
+                        Tambah Hari Baru
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal Pesan -->
+        <div id="message-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden">
+            <div class="bg-gray-800 rounded-lg p-8 w-full max-w-sm shadow-xl">
+                <h3 id="message-modal-title" class="text-xl font-bold text-gray-100 mb-4">Pesan</h3>
+                <p id="message-modal-text" class="text-gray-300 mb-6"></p>
+                <div class="flex justify-end">
+                    <button id="close-message-btn" class="px-6 py-2 text-sm font-semibold text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition duration-300">Tutup</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Konfirmasi Hapus -->
+        <div id="delete-confirm-modal" class="modal fixed inset-0 flex items-center justify-center p-4 hidden">
+            <div class="bg-gray-800 rounded-lg p-8 w-full max-w-sm shadow-xl">
+                <h3 class="text-xl font-bold text-red-400 mb-4">Konfirmasi Hapus</h3>
+                <p class="text-gray-300 mb-6">Apakah Anda yakin ingin menghapus siswa ini? Tindakan ini tidak dapat dibatalkan.</p>
+                <div class="flex justify-end space-x-4">
+                    <button id="cancel-delete-btn" class="px-6 py-2 text-sm font-semibold text-gray-800 bg-gray-300 rounded-lg hover:bg-gray-400 transition duration-300">Batal</button>
+                    <button id="confirm-delete-btn" class="px-6 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-300">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables for local data storage
+        const STUDENTS_KEY = 'lesson_students';
+        let students = [];
+        let currentStudentToDeleteId = null;
+
+        const DAILY_FEE = 5000;
+
+        const studentsTableBody = document.getElementById('students-table-body');
+        const totalStudentsEl = document.getElementById('total-students');
+        const totalAttendanceEl = document.getElementById('total-attendance');
+        const totalPaidEl = document.getElementById('total-paid');
+        const totalUnpaidEl = document.getElementById('total-unpaid');
+
+        // Modal Elements
+        const addStudentModal = document.getElementById('add-student-modal');
+        const manageStudentModal = document.getElementById('manage-student-modal');
+        const manageStudentTitle = document.getElementById('manage-student-title');
+        const manageStudentWeeksBody = document.getElementById('manage-student-weeks-body');
+        const addStudentBtn = document.getElementById('add-student-btn');
+
+        // Confirmation Modal Elements
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+
+        let currentStudentToManage = null;
+
+        const showMessage = (title, text) => {
+            document.getElementById('message-modal-title').textContent = title;
+            document.getElementById('message-modal-text').textContent = text;
+            document.getElementById('message-modal').classList.remove('hidden');
+        };
+
+        const hideMessage = () => {
+            document.getElementById('message-modal').classList.add('hidden');
+        };
+        
+        const showDeleteConfirmModal = () => {
+            deleteConfirmModal.classList.remove('hidden');
+        };
+
+        const hideDeleteConfirmModal = () => {
+            deleteConfirmModal.classList.add('hidden');
+        };
+
+        const saveData = () => {
+            localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+        };
+
+        const loadData = () => {
+            const data = localStorage.getItem(STUDENTS_KEY);
+            students = data ? JSON.parse(data) : [];
+        };
+
+        const updateDashboard = (studentsData) => {
+            let totalAttendance = 0;
+            let totalPaidAmount = 0;
+            let totalUnpaidAmount = 0;
+
+            if (studentsData.length > 0) {
+                studentsData.forEach(student => {
+                    (student.weeks || []).forEach(day => {
+                        if (day.attended) {
+                            totalAttendance++;
+                        }
+                        if (day.paid) {
+                            totalPaidAmount += day.paidAmount;
+                        } else if (!day.paid && day.attended) {
+                            totalUnpaidAmount += day.paidAmount;
+                        }
+                    });
+                });
+            }
+            totalStudentsEl.textContent = studentsData.length;
+            totalAttendanceEl.textContent = totalAttendance;
+            totalPaidEl.textContent = `Rp${totalPaidAmount.toLocaleString('id-ID')}`;
+            totalUnpaidEl.textContent = `Rp${totalUnpaidAmount.toLocaleString('id-ID')}`;
+        };
+
+        const renderStudents = () => {
+            studentsTableBody.innerHTML = '';
+            updateDashboard(students);
+
+            if (students.length === 0) {
+                studentsTableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-4 text-center text-gray-400">Tidak ada data siswa. Silakan tambahkan siswa baru.</td></tr>`;
+                return;
+            }
+
+            const today = new Date();
+            const dateString = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+
+            students.forEach(student => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-700 transition-colors duration-200';
+
+                const summary = {
+                    attended: 0,
+                    excused: 0,
+                    unexcused: 0
+                };
+                
+                let netBalance = 0;
+                
+                (student.weeks || []).forEach(day => {
+                    if (day.attended) summary.attended++;
+                    if (day.excused) summary.excused++;
+                    if (day.unexcused) summary.unexcused++;
+                    
+                    if (day.paid) {
+                        netBalance += DAILY_FEE;
+                    } else if (day.attended) {
+                        netBalance -= DAILY_FEE;
+                    }
+                });
+
+                const balanceClass = netBalance < 0 ? 'text-red-400' : 'text-green-400';
+                
+                const formattedBalance = `Rp${netBalance.toLocaleString('id-ID')}`;
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">${dateString}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-100">${student.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">${student.schedule}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-400">${summary.attended}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-400">${summary.excused}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-400">${summary.unexcused}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${balanceClass}">${formattedBalance}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="manage-btn text-blue-400 hover:text-blue-200" data-id="${student.id}">Kelola Absensi</button>
+                        <button class="delete-btn text-red-400 hover:text-red-200 ml-4" data-id="${student.id}">Hapus</button>
+                    </td>
+                `;
+                studentsTableBody.appendChild(row);
+            });
+            
+            // Add event listeners for new buttons
+            document.querySelectorAll('.manage-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const studentId = e.target.dataset.id;
+                    const student = students.find(s => s.id === studentId);
+                    if (student) {
+                        currentStudentToManage = student;
+                        showManageStudentModal(student);
+                    }
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const studentId = e.target.dataset.id;
+                    currentStudentToDeleteId = studentId;
+                    showDeleteConfirmModal();
+                });
+            });
+        };
+
+        const showManageStudentModal = (student) => {
+            manageStudentTitle.textContent = `Kelola Absensi: ${student.name}`;
+            manageStudentWeeksBody.innerHTML = '';
+            
+            (student.weeks || []).forEach(day => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-600 last:border-b-0';
+                
+                const attendedChecked = day.attended ? 'checked' : '';
+                const excusedChecked = day.excused ? 'checked' : '';
+                const unexcusedChecked = day.unexcused ? 'checked' : '';
+                const paidChecked = day.paid ? 'checked' : '';
+                
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">${day.date}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <input type="checkbox" class="attended-checkbox form-checkbox h-4 w-4 text-blue-600 rounded-md border-gray-600 bg-gray-700" ${attendedChecked} data-date="${day.date}"> Hadir
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <input type="checkbox" class="excused-checkbox form-checkbox h-4 w-4 text-purple-600 rounded-md border-gray-600 bg-gray-700" ${excusedChecked} data-date="${day.date}"> Izin
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <input type="checkbox" class="unexcused-checkbox form-checkbox h-4 w-4 text-red-600 rounded-md border-gray-600 bg-gray-700" ${unexcusedChecked} data-date="${day.date}"> Tanpa Ket.
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <input type="checkbox" class="paid-checkbox form-checkbox h-4 w-4 text-green-600 rounded-md border-gray-600 bg-gray-700" ${paidChecked} data-date="${day.date}"> Terbayar
+                    </td>
+                `;
+                manageStudentWeeksBody.appendChild(row);
+
+                // Add event listeners for checkboxes
+                const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const dateToUpdate = e.target.dataset.date;
+                        const isChecked = e.target.checked;
+                        const dayToUpdate = student.weeks.find(w => w.date === dateToUpdate);
+                        if (!dayToUpdate) return;
+                        
+                        // Handle mutual exclusivity for attendance status
+                        if (e.target.classList.contains('attended-checkbox')) {
+                            dayToUpdate.attended = isChecked;
+                            if (isChecked) {
+                                dayToUpdate.excused = false;
+                                dayToUpdate.unexcused = false;
+                            }
+                        } else if (e.target.classList.contains('excused-checkbox')) {
+                            dayToUpdate.excused = isChecked;
+                            if (isChecked) {
+                                dayToUpdate.attended = false;
+                                dayToUpdate.unexcused = false;
+                            }
+                        } else if (e.target.classList.contains('unexcused-checkbox')) {
+                            dayToUpdate.unexcused = isChecked;
+                            if (isChecked) {
+                                dayToUpdate.attended = false;
+                                dayToUpdate.excused = false;
+                            }
+                        } else if (e.target.classList.contains('paid-checkbox')) {
+                            dayToUpdate.paid = isChecked;
+                        }
+                        
+                        // Re-render the modal and save data
+                        updateStudent(student.id, { weeks: student.weeks });
+                        setTimeout(() => showManageStudentModal(students.find(s => s.id === student.id)), 10);
+                    });
+                });
+            });
+
+            manageStudentModal.classList.remove('hidden');
+        };
+
+        const hideManageStudentModal = () => {
+            manageStudentModal.classList.add('hidden');
+        };
+
+        const addStudent = (studentData) => {
+            students.push({ id: crypto.randomUUID(), ...studentData });
+            saveData();
+            renderStudents();
+            showMessage('Sukses', 'Siswa berhasil ditambahkan!');
+            document.getElementById('add-student-form').reset();
+            addStudentModal.classList.add('hidden');
+        };
+
+        const updateStudent = (studentId, dataToUpdate) => {
+            const studentIndex = students.findIndex(s => s.id === studentId);
+            if (studentIndex > -1) {
+                students[studentIndex] = { ...students[studentIndex], ...dataToUpdate };
+                saveData();
+                renderStudents();
+            }
+        };
+
+        const deleteStudent = (studentId) => {
+            students = students.filter(s => s.id !== studentId);
+            saveData();
+            renderStudents();
+            showMessage('Sukses', 'Siswa berhasil dihapus!');
+        };
+
+        // Initialize on window load
+        window.addEventListener('load', () => {
+            loadData();
+            renderStudents();
+        });
+
+        document.getElementById('add-student-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('new-student-name').value.trim();
+            const schedule = document.getElementById('new-student-schedule').value.trim();
+            if (name && schedule) {
+                addStudent({ name, schedule, weeks: [] });
+            } else {
+                showMessage("Peringatan", "Nama dan Jadwal Siswa tidak boleh kosong.");
+            }
+        });
+
+        document.getElementById('add-student-week-btn').addEventListener('click', () => {
+            if (!currentStudentToManage) return;
+            const today = new Date();
+            const dateString = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+            
+            const newDay = {
+                date: dateString,
+                attended: false,
+                excused: false,
+                unexcused: false,
+                paid: false,
+                paidAmount: DAILY_FEE
+            };
+            
+            const updatedDays = [...(currentStudentToManage.weeks || []), newDay];
+            updateStudent(currentStudentToManage.id, { weeks: updatedDays });
+            
+            // Re-render the modal to show the new week
+            setTimeout(() => {
+                currentStudentToManage = students.find(s => s.id === currentStudentToManage.id);
+                showManageStudentModal(currentStudentToManage);
+            }, 10);
+        });
+
+        document.getElementById('close-add-modal').addEventListener('click', () => addStudentModal.classList.add('hidden'));
+        document.getElementById('close-manage-modal').addEventListener('click', hideManageStudentModal);
+        document.getElementById('close-message-btn').addEventListener('click', hideMessage);
+        
+        // Initial button listener
+        addStudentBtn.addEventListener('click', () => addStudentModal.classList.remove('hidden'));
+
+        // Delete confirmation modal listeners
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (currentStudentToDeleteId) {
+                deleteStudent(currentStudentToDeleteId);
+                currentStudentToDeleteId = null;
+                hideDeleteConfirmModal();
+            }
+        });
+
+        cancelDeleteBtn.addEventListener('click', () => {
+            currentStudentToDeleteId = null;
+            hideDeleteConfirmModal();
+        });
+    </script>
+</body>
+</html>
